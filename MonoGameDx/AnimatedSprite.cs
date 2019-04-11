@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-namespace Game1
+namespace SI
 {
     public class AnimatedSprite
     {
@@ -13,7 +13,19 @@ namespace Game1
         private readonly int height;
         private int currentFrame;
         private readonly int totalFrames;
-        public int FrameRate { get; set; }
+        private int frameRate;
+        public int FrameRate
+        {
+            get
+            {
+                return frameRate;
+            }
+            set
+            {
+                frameRate = value;
+                this.frameInterval = frameRate > 0 ? TimeSpan.FromMilliseconds(1000 / FrameRate) : TimeSpan.FromMilliseconds(0);
+            }
+        }
 
         private TimeSpan frameInterval;
         private TimeSpan lastElapsedTime;
@@ -27,6 +39,8 @@ namespace Game1
         public int Width => width;
 
         public int Height => height;
+
+        public event EventHandler AnimationComplete;
 
         public Rectangle Box
         {
@@ -54,7 +68,6 @@ namespace Game1
             this.FrameRate = frameRate;
             this.Position = startPosition;
             this.lastElapsedTime = TimeSpan.FromMilliseconds(0);
-            this.frameInterval = frameRate > 0 ? TimeSpan.FromMilliseconds(1000 / FrameRate) : TimeSpan.FromMilliseconds(0);
             this.totalFrames = rows * cols;
             this.shouldLoop = shouldLoop;
             this.animationEnd = animationEnd;
@@ -71,6 +84,10 @@ namespace Game1
                 {
                     currentFrame = (currentFrame + 1) % totalFrames;
                     lastElapsedTime = TimeSpan.FromMilliseconds(0);
+                    if(currentFrame == 0)
+                    {
+                        if (AnimationComplete != null) AnimationComplete(this, null);
+                    }
                     if (shouldLoop == false && currentFrame == 0)
                     {
                         animationEnd();

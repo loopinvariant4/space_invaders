@@ -5,8 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 
-namespace Game1
+namespace SI
 {
+    /// <summary>
+    /// This class holds the full set of aliens for each level and performs operations that relate to the aliens as a group. 
+    /// For now, this is the best way i could think of managing a group of GameObjects who are related and have to respond to a 
+    /// single event as a group e.g. when they reach the right wall, all of them have to move left
+    /// </summary>
     public class AlienBag
     {
         int cols = 10;
@@ -53,6 +58,19 @@ namespace Game1
         public void Remove(int id)
         {
             aliens.Remove(id);
+            if(aliens.Count % 10 == 0)
+            {
+                increaseAlienSpeed();
+            }
+        }
+
+        private void increaseAlienSpeed()
+        {
+            foreach(var alien in aliens.Values)
+            {
+                alien.Speed *= 2;
+                alien.FrameRate += 1;
+            }
         }
 
         public void CheckEdgeCollision()

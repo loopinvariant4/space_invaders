@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace Game1
+namespace SI
 {
     public class Commander : GameObject
     {
@@ -18,6 +18,8 @@ namespace Game1
         Queue<Tuple<int, GameObject>> removeQueue;
         private State current = State.Alive;
         private int bulletCount = 0;
+        private readonly TimeSpan FIREINTERVAL = TimeSpan.FromMilliseconds(500); //ms
+        TimeSpan lastFireTime = TimeSpan.Zero;
 
 
         public override AnimatedSprite Sprite => commander;
@@ -37,12 +39,16 @@ namespace Game1
 
         }
 
-        public void Fire()
+        public void Fire(GameTime gt)
         {
             if (bullet == null)
             {
-                createBullet();
-                Console.WriteLine("Bullets fired: {0}", ++bulletCount);
+                if (gt.TotalGameTime - lastFireTime > FIREINTERVAL)
+                {
+                    createBullet();
+                    Console.WriteLine("Bullets fired: {0}", ++bulletCount);
+                    lastFireTime = gt.TotalGameTime;
+                }
             }
         }
 
@@ -70,7 +76,7 @@ namespace Game1
             commander.Draw(batch);
         }
 
-        public override void OnInput()
+        public override void OnInput(GameTime gt)
         {
             if(Keyboard.GetState().IsKeyDown(Keys.Up))
             {
@@ -90,7 +96,7 @@ namespace Game1
             }
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                Fire();
+                Fire(gt);
             }
         }
 

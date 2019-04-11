@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Game1
+namespace SI
 {
     public abstract class GameObject
     {
@@ -24,7 +24,7 @@ namespace Game1
 
         public abstract void Draw(SpriteBatch batch);
 
-        public abstract void OnInput();
+        public abstract void OnInput(GameTime gt);
 
         public abstract void Destroy();
 

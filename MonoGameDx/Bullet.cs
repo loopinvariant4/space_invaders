@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Game1
+namespace SI
 {
     public class Bullet : GameObject
     {
         AnimatedSprite bulletSprite = null;
         public event EventHandler Destroyed;
         public event EventHandler Collision;
-        private int SPEED = 5; // pixels per second
+        private int SPEED = 3; // pixels per second
         private State current = State.Alive;
         public override AnimatedSprite Sprite => bulletSprite;
 
@@ -73,7 +73,7 @@ namespace Game1
             bulletSprite.Draw(batch);
         }
 
-        public override void OnInput()
+        public override void OnInput(GameTime gt)
         {
         }
 

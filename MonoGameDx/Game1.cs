@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
 
-namespace Game1
+namespace SI
 {
     /// <summary>
     /// This is the main type for your game.
@@ -120,7 +120,7 @@ namespace Game1
 
             foreach(var obj in GameObjects.Values)
             {
-                obj.OnInput();
+                obj.OnInput(gameTime);
                 obj.Update(gameTime);
             }
 

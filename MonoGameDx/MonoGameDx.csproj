@@ -9,8 +9,8 @@
     <ProjectGuid>{A02CFA53-5C22-4012-B57D-1CC271DF64D3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Game1</RootNamespace>
-    <AssemblyName>MonoGameDx</AssemblyName>
+    <RootNamespace>SI</RootNamespace>
+    <AssemblyName>space_invaders</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MonoGamePlatform>Windows</MonoGamePlatform>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

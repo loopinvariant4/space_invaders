@@ -1,4 +1,4 @@
-﻿namespace Game1
+﻿namespace SI
 {
     internal interface IState
     {

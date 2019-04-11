@@ -104,3 +104,9 @@
 /processorParam:TextureFormat=Color
 /build:pointy_alien.png
 
+#begin tick.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:tick.wav
+
