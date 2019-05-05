@@ -1,42 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+using System.Collections.Generic;
 
 namespace SI
 {
     public class Commander : GameObject
     {
-        Bullet bullet = null;
-        AnimatedSprite commander = null;
-        Dictionary<int, GameObject> gameObjects;
-        Queue<Tuple<int, GameObject>> addQueue;
-        Queue<Tuple<int, GameObject>> removeQueue;
-        private State current = State.Alive;
+        private Bullet bullet = null;
+        private AnimatedSprite commanderSprite = null;
+        private readonly Dictionary<int, GameObject> gameObjects;
+        private Queue<Tuple<int, GameObject>> addQueue;
+        private Queue<Tuple<int, GameObject>> removeQueue;
+        private readonly State current = State.Alive;
         private int bulletCount = 0;
         private readonly TimeSpan FIREINTERVAL = TimeSpan.FromMilliseconds(500); //ms
-        TimeSpan lastFireTime = TimeSpan.Zero;
+        private TimeSpan lastFireTime = TimeSpan.Zero;
+        private readonly bool isInputEnabled = true;
+        public event EventHandler Destroyed;
 
 
-        public override AnimatedSprite Sprite => commander;
+        // sprite for the explosion when an commander dies
+        private AnimatedSprite explosionSprite;
+
+        // reference to the current sprite which is determined by the state the commander is in
+        private AnimatedSprite currentSprite;
+
+        // references the current sprite based on the state of the alien
+        public override AnimatedSprite Sprite => currentSprite;
+
 
         public override Rectangle Box => Sprite.Box;
 
         public override State Current => current;
 
+        public Point Position => commanderSprite.Position;
+
         public Commander(int id)
         {
-            commander = new AnimatedSprite("commander", 3, 1, 12, true, Point.Zero, null);
-            commander.Position = new Point(Env.Screen.Width / 2 + commander.Width / 2, Env.Screen.Height - 100);
+            commanderSprite = new AnimatedSprite("commander", 3, 1, 12, true, Point.Zero, null);
+            explosionSprite = new AnimatedSprite("commander_explosion", 7, 1, 21, false, Point.Zero, () => Destroy());
+            explosionSprite.Hide();
+
+            currentSprite = commanderSprite;
+
+            commanderSprite.Position = new Point(Env.Screen.Width / 2 + commanderSprite.Width / 2, Env.Screen.Height - 100);
             Id = id;
             gameObjects = DIContainer.Get<Dictionary<int, GameObject>>("GameObjects");
             addQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("AddQueue");
             removeQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("RemoveQueue");
-
         }
 
         public void Fire(GameTime gt)
@@ -54,7 +67,7 @@ namespace SI
 
         private void createBullet()
         {
-            bullet = new Bullet(new Point(commander.Position.X + commander.Width / 2, commander.Position.Y - commander.Height / 2), IdGen.Next);
+            bullet = new Bullet(new Point(commanderSprite.Position.X + commanderSprite.Width / 2, commanderSprite.Position.Y - commanderSprite.Height / 2), IdGen.Next);
             bullet.Destroyed += Bullet_Destroyed;
             addQueue.Enqueue(new Tuple<int, GameObject>(bullet.Id, bullet));
         }
@@ -68,46 +81,91 @@ namespace SI
 
         public override void Update(GameTime gt)
         {
-            commander.Update(gt);
+            Sprite.Update(gt);
         }
 
         public override void Draw(SpriteBatch batch)
         {
-            commander.Draw(batch);
+            Sprite.Draw(batch);
         }
 
         public override void OnInput(GameTime gt)
         {
-            if(Keyboard.GetState().IsKeyDown(Keys.Up))
+            int moveSpeed = 3;
+            if (isInputEnabled == false) return;
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Up))
             {
-                commander.Position.Y -= 2;
+                if (isOutOfBounds(Bounds.Top) == false)
+                {
+                    commanderSprite.Position.Y -= moveSpeed;
+                }
             }
-            if(Keyboard.GetState().IsKeyDown(Keys.Down))
+            if (Keyboard.GetState().IsKeyDown(Keys.Down))
             {
-                commander.Position.Y += 2;
+                if (isOutOfBounds(Bounds.Bottom) == false)
+                {
+                    commanderSprite.Position.Y += moveSpeed;
+                }
             }
             if (Keyboard.GetState().IsKeyDown(Keys.Left))
             {
-                commander.Position.X -= 2;
+                if (isOutOfBounds(Bounds.Left) == false)
+                {
+                    commanderSprite.Position.X -= moveSpeed;
+                }
             }
             if (Keyboard.GetState().IsKeyDown(Keys.Right))
             {
-                commander.Position.X += 2;
+                if (isOutOfBounds(Bounds.Right) == false)
+                {
+                    commanderSprite.Position.X += moveSpeed;
+                }
             }
-            if(Keyboard.GetState().IsKeyDown(Keys.Space))
+            if (Keyboard.GetState().IsKeyDown(Keys.Space))
             {
                 Fire(gt);
             }
         }
 
-        public override void Destroy()
-        {
-            throw new NotImplementedException();
-        }
-
         public override void CollidedWith(GameObject otherObject)
         {
-            throw new NotImplementedException();
+            DIContainer.Get<Collider>("Collider").UnRegister(this);
+            currentSprite = explosionSprite;
+            explosionSprite.Position = commanderSprite.Position;
+            commanderSprite.Hide();
+            explosionSprite.Show();
         }
+
+        public override void Destroy()
+        {
+            explosionSprite.Hide();
+            Destroyed?.Invoke(this, null);
+            removeQueue.Enqueue(new Tuple<int, GameObject>(Id, this));
+        }
+
+        private bool isOutOfBounds(Bounds bounds)
+        {
+            switch (bounds)
+            {
+                case Bounds.Top:
+                    return this.Position.Y <= 0;
+                case Bounds.Left:
+                    return this.Position.X <= 0;
+                case Bounds.Bottom:
+                    return this.Position.Y >= Env.Screen.Height - this.commanderSprite.Height;
+                case Bounds.Right:
+                    return this.Position.X >= Env.Screen.Width - this.commanderSprite.Width;
+            }
+            return false;
+        }
+    }
+
+    public enum Bounds
+    {
+        Top,
+        Left,
+        Bottom,
+        Right
     }
 }

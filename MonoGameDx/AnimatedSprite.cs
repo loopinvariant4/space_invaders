@@ -76,6 +76,8 @@ namespace SI
 
         public void Update(GameTime gameTime)
         {
+            if (isHidden == true) return;
+
             if (totalFrames > 1)
             {
                 lastElapsedTime += gameTime.ElapsedGameTime;
@@ -86,7 +88,7 @@ namespace SI
                     lastElapsedTime = TimeSpan.FromMilliseconds(0);
                     if(currentFrame == 0)
                     {
-                        if (AnimationComplete != null) AnimationComplete(this, null);
+                        AnimationComplete?.Invoke(this, null);
                     }
                     if (shouldLoop == false && currentFrame == 0)
                     {

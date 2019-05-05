@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SI
 {
     public class Collider
     {
-        List<Tuple<GameObject, GameObject>> twoObjects = new List<Tuple<GameObject, GameObject>>();
-        List<Tuple<GameObject, GameObject[]>> oneToMany = new List<Tuple<GameObject, GameObject[]>>();
+        private List<Tuple<GameObject, GameObject>> twoObjects = new List<Tuple<GameObject, GameObject>>();
+        private List<Tuple<GameObject, GameObject[]>> oneToMany = new List<Tuple<GameObject, GameObject[]>>();
         private Queue<GameObject> itemsToRemove = new Queue<GameObject>();
         public void Register(GameObject obj1, GameObject obj2)
         {
@@ -30,7 +27,7 @@ namespace SI
         {
             while (itemsToRemove.Count > 0)
             {
-                var obj = itemsToRemove.Dequeue();
+                GameObject obj = itemsToRemove.Dequeue();
                 twoObjects.RemoveAll(t => t.Item1.Id == obj.Id);
                 oneToMany.RemoveAll(t => t.Item1.Id == obj.Id);
             }
@@ -39,10 +36,10 @@ namespace SI
 
         public void CheckCollisions()
         {
-            foreach (var item in twoObjects)
+            foreach (Tuple<GameObject, GameObject> item in twoObjects)
             {
-                var obj1 = item.Item1;
-                var obj2 = item.Item2;
+                GameObject obj1 = item.Item1;
+                GameObject obj2 = item.Item2;
 
                 if (obj1.Current == State.Alive && obj2.Current == State.Alive)
                 {
@@ -50,18 +47,16 @@ namespace SI
                 }
             }
 
-            foreach (var item in oneToMany)
+            foreach (Tuple<GameObject, GameObject[]> item in oneToMany)
             {
-                var obj1 = item.Item1;
-                var listobjs = item.Item2;
+                GameObject obj1 = item.Item1;
+                GameObject[] listobjs = item.Item2;
 
-                if (obj1.Current == State.Alive)
+                foreach (GameObject obj2 in listobjs)
                 {
-                    foreach (var obj2 in listobjs)
-                    {
-                        if (obj2.Current != State.Alive) continue;
-                        CheckTwoObjects(obj1, obj2);
-                    }
+                    if (obj1.Current != State.Alive) break;
+                    if (obj2.Current != State.Alive) continue;
+                    CheckTwoObjects(obj1, obj2);
                 }
             }
         }

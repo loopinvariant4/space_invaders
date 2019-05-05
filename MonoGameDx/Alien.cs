@@ -76,7 +76,7 @@ namespace SI
         {
             alien = new AnimatedSprite(alienKey, 2, 1, 1, true, startposition, null);
             alien.Show();
-            explosion = new AnimatedSprite("alien_explosion", 8, 1, 200, false, Point.Zero, () => Destroy());
+            explosion = new AnimatedSprite("alien_explosion", 8, 1, 1, false, Point.Zero, () => Destroy());
             explosion.Hide();
             currentSprite = alien;
             Id = id;

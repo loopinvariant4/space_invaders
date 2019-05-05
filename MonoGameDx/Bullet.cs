@@ -13,7 +13,7 @@ namespace SI
         AnimatedSprite bulletSprite = null;
         public event EventHandler Destroyed;
         public event EventHandler Collision;
-        private int SPEED = 3; // pixels per second
+        private int SPEED = 5; // pixels per second
         private State current = State.Alive;
         public override AnimatedSprite Sprite => bulletSprite;
 
@@ -49,7 +49,8 @@ namespace SI
 
         public override void Destroy()
         {
-            if(Destroyed != null) Destroyed(this, null);
+            current = State.Dead;
+            Destroyed?.Invoke(this, null);
         }
 
         private bool isOutOfBounds()
@@ -79,8 +80,9 @@ namespace SI
 
         public override void CollidedWith(GameObject otherObject)
         {
+            current = State.Dying;
             DIContainer.Get<Collider>("Collider").UnRegister(this);
-            if(Collision != null) Collision(this, null);
+            Collision?.Invoke(this, null);
             Destroy();
         }
     }

@@ -12,26 +12,21 @@ namespace SI
     /// </summary>
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        AnimatedSprite sprite;
-        AnimatedSprite sprite2;
-        AnimatedSprite bulletSprite;
-        AnimatedSprite commanderSprite;
-        AssetLoader loader;
-        Queue<Tuple<int, GameObject>> addQueue = new Queue<Tuple<int, GameObject>>();
-        Queue<Tuple<int, GameObject>> removeQueue = new Queue<Tuple<int, GameObject>>();
-        AlienBag alienBag;
-        Collider collider;
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+        private Level levelManager;
+        private readonly AnimatedSprite sprite;
+        private readonly AnimatedSprite sprite2;
+        private readonly AnimatedSprite bulletSprite;
+        private AssetLoader loader;
 
-        public static Dictionary<int, GameObject> GameObjects = new Dictionary<int, GameObject>();
-        Vector2 pos;
-        SpriteFont font;
-        int fps;
-        int frameRate = 0;
-        int frameCounter = 0;
-        TimeSpan elapsedTime = TimeSpan.Zero;
-        Song song;
+        private Vector2 pos;
+        private SpriteFont font;
+        private readonly int fps;
+        private int frameRate = 0;
+        private int frameCounter = 0;
+        private TimeSpan elapsedTime = TimeSpan.Zero;
+        private readonly Song song;
 
         public Game1()
         {
@@ -51,17 +46,11 @@ namespace SI
         {
             // TODO: Add your initialization logic here
 
-            collider = new Collider();
             spriteBatch = new SpriteBatch(GraphicsDevice);
             loader = new AssetLoader(this.Content, spriteBatch);
             DIContainer.Add<AssetLoader>("AssetLoader", loader);
-            DIContainer.Add<Dictionary<int, GameObject>>("GameObjects", GameObjects);
-            DIContainer.Add<Queue<Tuple<int, GameObject>>>("AddQueue", addQueue);
-            DIContainer.Add<Queue<Tuple<int, GameObject>>>("RemoveQueue", removeQueue);
-            DIContainer.Add<Collider>("Collider", collider);
+            levelManager = new Level();
 
-            alienBag = new AlienBag();
-            DIContainer.Add<AlienBag>("AlienBag", alienBag);
 
             Env.Screen = this.GraphicsDevice.Viewport;
             base.Initialize();
@@ -74,16 +63,8 @@ namespace SI
         /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            alienBag.GenerateLevel();
-            GameObjects.Add(1, new Commander(1));
-
             font = Content.Load<SpriteFont>("courier");
 
-            //this.song = Content.Load<Song>("Burning Brides - Artic Snow");
-            //MediaPlayer.Play(song);
-
-            // TODO: use this.Content to load your game content here
         }
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
@@ -94,6 +75,13 @@ namespace SI
             // TODO: Unload any non ContentManager content here
         }
 
+        protected override void BeginRun()
+        {
+            int i = 0;
+            levelManager.StartLevel(i);
+            levelManager.LevelComplete += (o, e) => levelManager.StartLevel(++i);
+            base.BeginRun();
+        }
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -102,46 +90,22 @@ namespace SI
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
                 Exit();
-
-            while(removeQueue.Count > 0)
-            {
-                var tup = removeQueue.Dequeue();
-                GameObjects.Remove(tup.Item1);
-            }
-            while(addQueue.Count > 0)
-            {
-                var tup = addQueue.Dequeue();
-                GameObjects.Add(tup.Item1, tup.Item2);
             }
 
-            collider.CheckCollisions();
-            alienBag.CheckEdgeCollision();
-
-            foreach(var obj in GameObjects.Values)
-            {
-                obj.OnInput(gameTime);
-                obj.Update(gameTime);
-            }
-
-            collider.RemoveQueuedItems();
-            // TODO: Add your update logic here
-            //sprite.Position.X = (sprite.Position.X + 1) % this.GraphicsDevice.Viewport.Width;
-            //sprite2.Position.X = (sprite2.Position.X + 1) % this.GraphicsDevice.Viewport.Width;
+            levelManager.Update(gameTime);
 
             elapsedTime += gameTime.ElapsedGameTime;
-
             if (elapsedTime > System.TimeSpan.FromSeconds(1))
             {
                 elapsedTime -= TimeSpan.FromSeconds(1);
                 frameRate = frameCounter;
                 frameCounter = 0;
             }
-            //sprite.Update(gameTime);
-            //sprite2.Update(gameTime);
-            
+
             base.Update(gameTime);
-            
+
         }
 
         /// <summary>
@@ -156,12 +120,8 @@ namespace SI
             frameCounter++;
             spriteBatch.Begin();
             spriteBatch.DrawString(font, frameRate.ToString(), new Vector2(0, 0), Color.White);
-            //sprite.Draw(spriteBatch);
-            //sprite2.Draw(spriteBatch);
-            foreach(var obj in GameObjects.Values)
-            {
-                obj.Draw(spriteBatch);
-            }
+            levelManager.Draw(gameTime, spriteBatch);
+            
             spriteBatch.End();
             base.Draw(gameTime);
         }

@@ -14,6 +14,7 @@ namespace SI
     /// </summary>
     public class AlienBag
     {
+        #region vars
         int cols = 10;
         const int XOFFSET = 50;
         const int YOFFSET = 100;
@@ -26,13 +27,20 @@ namespace SI
         Dictionary<int, GameObject> gameObjects;
         int alienDirection = 1;
 
+        // reference to the global queue responsible for adding a game object into the renderer list
+        private readonly Queue<Tuple<int, GameObject>> addQueue;
+
         Dictionary<int, Alien> aliens = new Dictionary<int, Alien>();
+        public event EventHandler AllDead;
+        #endregion
 
         public Dictionary<int, Alien> Aliens { get { return aliens; } }
 
         public AlienBag()
         {
             gameObjects = DIContainer.Get<Dictionary<int, GameObject>>("GameObjects");
+            addQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("AddQueue");
+
         }
 
         public void GenerateLevel()
@@ -49,7 +57,7 @@ namespace SI
                     var id = IdGen.Next;
                     Alien a = new Alien(id, keys[r], rowPos, this);
                     aliens.Add(id, a);
-                    gameObjects.Add(id, a);
+                    addQueue.Enqueue(new Tuple<int, GameObject>(id, a));
                     rowPos.X += MAXWIDTH + 5;
                 }
             }
@@ -61,6 +69,10 @@ namespace SI
             if(aliens.Count % 10 == 0)
             {
                 increaseAlienSpeed();
+            }
+            if(aliens.Count == 0)
+            {
+                AllDead?.Invoke(this, null);
             }
         }
 
