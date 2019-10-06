@@ -32,6 +32,8 @@ namespace SI
 
         Dictionary<int, Alien> aliens = new Dictionary<int, Alien>();
         public event EventHandler AllDead;
+        public event EventHandler<AlienDestroyedEventArgs> AlienDead;
+        public event EventHandler AlienVictory;
         #endregion
 
         public Dictionary<int, Alien> Aliens { get { return aliens; } }
@@ -56,6 +58,7 @@ namespace SI
                 {
                     var id = IdGen.Next;
                     Alien a = new Alien(id, keys[r], rowPos, this);
+                    a.Destroyed += (o, e) => AlienDead?.Invoke(o, e);
                     aliens.Add(id, a);
                     addQueue.Enqueue(new Tuple<int, GameObject>(id, a));
                     rowPos.X += MAXWIDTH + 5;
@@ -80,7 +83,7 @@ namespace SI
         {
             foreach(var alien in aliens.Values)
             {
-                alien.Speed *= 2;
+                alien.Speed += (1 + alien.Speed / 2);
                 alien.FrameRate += 1;
             }
         }
@@ -105,6 +108,12 @@ namespace SI
                         shouldChangeDirection = true;
                         break;
                     }
+                }
+
+                if(Env.Screen.Height - (alien.Box.Top + alien.Box.Height) <= 20)
+                {
+                    AlienVictory?.Invoke(this, null);
+                    return;
                 }
             }
             if (shouldChangeDirection)

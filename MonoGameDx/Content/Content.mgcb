@@ -13,6 +13,12 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin alien_explode.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:alien_explode.wav
+
 #begin alien_explosion.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -115,6 +121,12 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:pointy_alien.png
+
+#begin shoot_sound.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:shoot_sound.wav
 
 #begin tick.wav
 /importer:WavImporter

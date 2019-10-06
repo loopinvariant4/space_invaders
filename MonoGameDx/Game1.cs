@@ -14,10 +14,7 @@ namespace SI
     {
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
-        private Level levelManager;
-        private readonly AnimatedSprite sprite;
-        private readonly AnimatedSprite sprite2;
-        private readonly AnimatedSprite bulletSprite;
+        private IGameStage currentStage;
         private AssetLoader loader;
 
         private Vector2 pos;
@@ -32,8 +29,9 @@ namespace SI
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            graphics.PreferredBackBufferWidth = 1500;
-            graphics.PreferredBackBufferHeight = 700;
+            graphics.IsFullScreen = false;
+            graphics.PreferredBackBufferWidth = 1024;
+            graphics.PreferredBackBufferHeight = 768;
         }
 
         /// <summary>
@@ -46,16 +44,17 @@ namespace SI
         {
             // TODO: Add your initialization logic here
 
+            this.IsMouseVisible = true;
             spriteBatch = new SpriteBatch(GraphicsDevice);
             loader = new AssetLoader(this.Content, spriteBatch);
-            DIContainer.Add<AssetLoader>("AssetLoader", loader);
-            levelManager = new Level();
-
+            //graphics.PreferredBackBufferWidth = this.GraphicsDevice.Viewport.Width;
+            //graphics.PreferredBackBufferHeight = this.GraphicsDevice.Viewport.Height;
 
             Env.Screen = this.GraphicsDevice.Viewport;
             base.Initialize();
-
         }
+
+
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -77,11 +76,12 @@ namespace SI
 
         protected override void BeginRun()
         {
-            int i = 0;
-            levelManager.StartLevel(i);
-            levelManager.LevelComplete += (o, e) => levelManager.StartLevel(++i);
+            startNewGame();
             base.BeginRun();
         }
+
+
+
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -94,7 +94,7 @@ namespace SI
                 Exit();
             }
 
-            levelManager.Update(gameTime);
+            currentStage.Update(gameTime);
 
             elapsedTime += gameTime.ElapsedGameTime;
             if (elapsedTime > System.TimeSpan.FromSeconds(1))
@@ -114,16 +114,48 @@ namespace SI
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            //GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
+
 
             // TODO: Add your drawing code here
             frameCounter++;
+            var fontSize = font.MeasureString(frameRate.ToString());
             spriteBatch.Begin();
-            spriteBatch.DrawString(font, frameRate.ToString(), new Vector2(0, 0), Color.White);
-            levelManager.Draw(gameTime, spriteBatch);
-            
+            spriteBatch.DrawString(font, frameRate.ToString(), new Vector2(Env.Screen.Width - fontSize.Length(), 0), Color.White);
+            currentStage.Draw(gameTime, spriteBatch);
             spriteBatch.End();
             base.Draw(gameTime);
         }
+
+        #region private methods
+        /// <summary>
+        /// Create all the stages of the game and wire them up to load one after the other
+        /// </summary>
+        private IGameStage createGameStages()
+        {
+            var stage1 = new MainScreen("MainScreen");
+            var stage2 = new Level("Level");
+            var stage3 = new GameOver("GameOver");
+
+            stage1.Next = stage2;
+            stage2.Next = stage3;
+            stage3.Next = stage1;
+
+            stage1.End += (o, e) => { currentStage = stage2; currentStage.BeforeStart(); currentStage.Start(); };
+            stage2.End += (o, e) => { currentStage = stage3; currentStage.BeforeStart(); currentStage.Start(); };
+            stage3.End += (o, e) => { startNewGame(); };
+            return stage1;
+        }
+
+        private void startNewGame()
+        {
+            DIContainer.Clear();
+            DIContainer.Add<AssetLoader>("AssetLoader", loader);
+            currentStage = createGameStages();
+            currentStage.BeforeStart();
+            currentStage.Start();
+        }
+        #endregion
     }
 }

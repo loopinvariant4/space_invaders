@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -13,12 +14,16 @@ namespace SI
         private readonly Dictionary<int, GameObject> gameObjects;
         private Queue<Tuple<int, GameObject>> addQueue;
         private Queue<Tuple<int, GameObject>> removeQueue;
-        private readonly State current = State.Alive;
+        private State current = State.Alive;
         private int bulletCount = 0;
-        private readonly TimeSpan FIREINTERVAL = TimeSpan.FromMilliseconds(500); //ms
+        private readonly TimeSpan FIREINTERVAL = TimeSpan.FromMilliseconds(10); //ms
         private TimeSpan lastFireTime = TimeSpan.Zero;
         private readonly bool isInputEnabled = true;
         public event EventHandler Destroyed;
+
+        // list of sounds that this alien can hold
+        Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+
 
 
         // sprite for the explosion when an commander dies
@@ -40,7 +45,7 @@ namespace SI
         public Commander(int id)
         {
             commanderSprite = new AnimatedSprite("commander", 3, 1, 12, true, Point.Zero, null);
-            explosionSprite = new AnimatedSprite("commander_explosion", 7, 1, 21, false, Point.Zero, () => Destroy());
+            explosionSprite = new AnimatedSprite("commander_explosion", 7, 1, 14, false, Point.Zero, () => Destroy());
             explosionSprite.Hide();
 
             currentSprite = commanderSprite;
@@ -50,6 +55,7 @@ namespace SI
             gameObjects = DIContainer.Get<Dictionary<int, GameObject>>("GameObjects");
             addQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("AddQueue");
             removeQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("RemoveQueue");
+            sounds.Add("shoot_sound", DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SoundEffect>("shoot_sound"));
         }
 
         public void Fire(GameTime gt)
@@ -60,9 +66,20 @@ namespace SI
                 {
                     createBullet();
                     Console.WriteLine("Bullets fired: {0}", ++bulletCount);
+                    sounds["shoot_sound"].Play();
                     lastFireTime = gt.TotalGameTime;
                 }
             }
+        }
+
+        public void Kill()
+        {
+            current = State.Dying;
+            DIContainer.Get<Collider>("Collider").UnRegister(this);
+            currentSprite = explosionSprite;
+            explosionSprite.Position = commanderSprite.Position;
+            commanderSprite.Hide();
+            explosionSprite.Show();
         }
 
         private void createBullet()
@@ -130,16 +147,13 @@ namespace SI
 
         public override void CollidedWith(GameObject otherObject)
         {
-            DIContainer.Get<Collider>("Collider").UnRegister(this);
-            currentSprite = explosionSprite;
-            explosionSprite.Position = commanderSprite.Position;
-            commanderSprite.Hide();
-            explosionSprite.Show();
+            Kill();
         }
 
         public override void Destroy()
         {
             explosionSprite.Hide();
+            current = State.Dead;
             Destroyed?.Invoke(this, null);
             removeQueue.Enqueue(new Tuple<int, GameObject>(Id, this));
         }

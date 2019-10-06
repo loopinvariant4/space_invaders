@@ -19,5 +19,15 @@ namespace SI
         {
             return (T)items[id];
         }
+
+        public static bool Contains<T>(string id)
+        {
+            return items.ContainsKey(id);
+        }
+
+        public static void Clear()
+        {
+            items.Clear();
+        }
     }
 }

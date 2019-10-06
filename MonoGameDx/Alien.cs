@@ -38,6 +38,9 @@ namespace SI
 
         // list of sounds that this alien can hold
         Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+
+        // determines if aliens have won by landing on the bottom
+        private bool hasWon = false;
         #endregion
 
         #region properties
@@ -62,6 +65,8 @@ namespace SI
         {
             get => current;
         }
+
+        public event EventHandler<AlienDestroyedEventArgs> Destroyed;
         #endregion
 
         #region ctor
@@ -76,7 +81,7 @@ namespace SI
         {
             alien = new AnimatedSprite(alienKey, 2, 1, 1, true, startposition, null);
             alien.Show();
-            explosion = new AnimatedSprite("alien_explosion", 8, 1, 1, false, Point.Zero, () => Destroy());
+            explosion = new AnimatedSprite("alien_explosion", 8, 1, 60, false, Point.Zero, () => Destroy());
             explosion.Hide();
             currentSprite = alien;
             Id = id;
@@ -85,8 +90,11 @@ namespace SI
             removeQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("RemoveQueue");
             this.bag = bag;
 
+            this.bag.AlienVictory += (o, e) => hasWon = true;
             sounds.Add("tick", DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SoundEffect>("tick"));
-            alien.AnimationComplete += (sender, args) => sounds["tick"].Play();
+            sounds.Add("alien_explode", DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SoundEffect>("alien_explode"));
+
+            //alien.AnimationComplete += (sender, args) => sounds["tick"].Play();
             Direction = 1;
             Speed = 1;
         }
@@ -116,8 +124,11 @@ namespace SI
         /// <param name="gt"></param>
         public override void Update(GameTime gt)
         {
-            Sprite.Position.X = (alien.Position.X + (Speed * Direction));
-            Sprite.Update(gt);
+            if (hasWon == false)
+            {
+                Sprite.Position.X = (alien.Position.X + (Speed * Direction));
+                Sprite.Update(gt);
+            }
         }
 
         /// <summary>
@@ -142,6 +153,8 @@ namespace SI
             explosion.Position = alien.Position;
             alien.Hide();
             explosion.Show();
+            sounds["alien_explode"].Play();
+            Destroyed?.Invoke(this, new AlienDestroyedEventArgs("a", 10));
         }
 
         /// <summary>
@@ -153,5 +166,17 @@ namespace SI
             current = next;
         }
         #endregion
+    }
+
+    public class AlienDestroyedEventArgs : EventArgs 
+    {
+        public int Score {get; set;}
+        string Name {get; set;}
+
+        public AlienDestroyedEventArgs(string name, int score) 
+        {
+            Name = name;
+            Score = score;
+        }
     }
 }
