@@ -13,7 +13,7 @@ namespace SI
     {
         #region vars
         // sprite for the alien
-        private AnimatedSprite alien;   
+        private AnimatedSprite alien;
 
         // sprite for the explosion when an alien dies
         private AnimatedSprite explosion;
@@ -114,7 +114,7 @@ namespace SI
         /// redundant method call for this gameobject since it is non interactive.
         /// The other option is to use multiple interfaces with casts all over the place
         /// </summary>
-        public override void OnInput(GameTime gt)
+        public override void OnInput(GameTime gt, GameInput input)
         {
         }
 
@@ -124,11 +124,13 @@ namespace SI
         /// <param name="gt"></param>
         public override void Update(GameTime gt)
         {
+            // the alien should no longer move
             if (hasWon == false)
             {
                 Sprite.Position.X = (alien.Position.X + (Speed * Direction));
-                Sprite.Update(gt);
             }
+
+            Sprite.Update(gt);
         }
 
         /// <summary>
@@ -168,12 +170,12 @@ namespace SI
         #endregion
     }
 
-    public class AlienDestroyedEventArgs : EventArgs 
+    public class AlienDestroyedEventArgs : EventArgs
     {
-        public int Score {get; set;}
-        string Name {get; set;}
+        public int Score { get; set; }
+        string Name { get; set; }
 
-        public AlienDestroyedEventArgs(string name, int score) 
+        public AlienDestroyedEventArgs(string name, int score)
         {
             Name = name;
             Score = score;

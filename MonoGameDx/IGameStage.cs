@@ -27,12 +27,17 @@ namespace SI
         /// <summary>
         /// Any actions to be performed before we start this stage 
         /// </summary>
-        void BeforeStart();
+        void BeforeStart(GameStageSettings settings = null);
 
         /// <summary>
         /// Start this game stage
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// Perform any actions before the gamestage is ended
+        /// </summary>
+        void BeforeEnd();
 
         /// <summary>
         /// Any actions to be taken when this stage ends
@@ -43,7 +48,7 @@ namespace SI
         /// Called for each tick to update the game logic
         /// </summary>
         /// <param name="gameTime"></param>
-        void Update(GameTime gameTime);
+        void Update(GameTime gameTime, GameInput input);
 
         /// <summary>
         /// Called for each tick of the game to render the objects on the screen from this stage

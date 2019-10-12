@@ -29,5 +29,13 @@ namespace SI
         {
             items.Clear();
         }
+
+        public static void Remove(string id)
+        {
+            if(items.ContainsKey(id))
+            {
+                items.Remove(id);
+            }
+        }
     }
 }

@@ -31,7 +31,7 @@ namespace SI
 
         public IGameStage Next { get; set; }
 
-        public void BeforeStart()
+        public void BeforeStart(GameStageSettings settings = null)
         {
             font = DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SpriteFont>("courier");
         }
@@ -54,12 +54,17 @@ namespace SI
         {
         }
 
-        public void Update(GameTime gameTime)
+        public void BeforeEnd()
+        {
+
+        }
+
+        public void Update(GameTime gameTime, GameInput input)
         {
             currentWaitTime += gameTime.ElapsedGameTime;
             if (currentWaitTime >= WAITTIME)
             {
-                var keys = Keyboard.GetState().GetPressedKeys();
+                var keys = input.Keys;
                 if (keys.Length > 0)
                 {
                     End?.Invoke(this, null);

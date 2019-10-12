@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.IO;
 using System.Linq;
 
 namespace SI
@@ -16,7 +16,7 @@ namespace SI
     public class Level : IGameStage
     {
         #region vars
-        private readonly Collider collider;
+        private Collider collider;
         private AlienBag alienBag;
         private Queue<Tuple<int, GameObject>> addQueue = new Queue<Tuple<int, GameObject>>();
         private Queue<Tuple<int, GameObject>> removeQueue = new Queue<Tuple<int, GameObject>>();
@@ -37,22 +37,6 @@ namespace SI
         public Level(string id)
         {
             Id = id;
-            DIContainer.Add<Dictionary<int, GameObject>>("GameObjects", GameObjects);
-            DIContainer.Add<Queue<Tuple<int, GameObject>>>("AddQueue", addQueue);
-            DIContainer.Add<Queue<Tuple<int, GameObject>>>("RemoveQueue", removeQueue);
-
-            collider = new Collider();
-            DIContainer.Add<Collider>("Collider", collider);
-            alienBag = new AlienBag();
-            DIContainer.Add<AlienBag>("AlienBag", alienBag);
-            alienBag.AllDead += (o, e) => NextLevel(currentLevel++);
-            alienBag.AlienDead += (o, e) => updateScore(e);
-            alienBag.AlienVictory += (o, e) =>
-            {
-                isAlienVictorious = true;
-                commander.Kill();
-            };
-            font = DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SpriteFont>("courier");
         }
         #endregion
 
@@ -83,16 +67,33 @@ namespace SI
 
 
         #region IGameStage interface
-        public void BeforeStart()
+        public void BeforeStart(GameStageSettings settings = null)
         {
             ResetGame();
         }
+
+
 
         private void ResetGame()
         {
             lives = 4;
             score = 0;
+            DIContainer.Add<Dictionary<int, GameObject>>("GameObjects", GameObjects);
+            DIContainer.Add<Queue<Tuple<int, GameObject>>>("AddQueue", addQueue);
+            DIContainer.Add<Queue<Tuple<int, GameObject>>>("RemoveQueue", removeQueue);
 
+            collider = new Collider();
+            DIContainer.Add<Collider>("Collider", collider);
+            alienBag = new AlienBag();
+            DIContainer.Add<AlienBag>("AlienBag", alienBag);
+            alienBag.AllDead += (o, e) => NextLevel(currentLevel++);
+            alienBag.AlienDead += (o, e) => updateScore(e);
+            alienBag.AlienVictory += (o, e) =>
+            {
+                isAlienVictorious = true;
+                commander.Kill();
+            };
+            font = DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SpriteFont>("courier");
         }
 
         public void Start()
@@ -100,7 +101,7 @@ namespace SI
             Start(currentLevel++);
         }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gameTime, GameInput input)
         {
             while (removeQueue.Count > 0)
             {
@@ -113,22 +114,26 @@ namespace SI
                 GameObjects.Add(tup.Item1, tup.Item2);
             }
 
-            collider.CheckCollisions();
-            alienBag.CheckEdgeCollision();
+            if (isAlienVictorious == false)
+            {
+                collider.CheckCollisions();
+                alienBag.CheckEdgeCollision();
+            }
 
             foreach (GameObject obj in GameObjects.Values)
             {
-                obj.OnInput(gameTime);
+                obj.OnInput(gameTime, input);
                 obj.Update(gameTime);
-                if (Keyboard.GetState().IsKeyDown(Keys.K))
+                if (input.IsKeyDown(Keys.K))
                 {
                     isAlienVictorious = true;
                     commander.Kill();
                 }
             }
-
             collider.RemoveQueuedItems();
         }
+
+
 
         public void Draw(GameTime gt, SpriteBatch spriteBatch)
         {
@@ -146,6 +151,14 @@ namespace SI
 
         }
 
+        public void BeforeEnd()
+        {
+            DIContainer.Remove("GameObjects");
+            DIContainer.Remove("AddQueue");
+            DIContainer.Remove("RemoveQueue");
+            DIContainer.Remove("Collider");
+            DIContainer.Remove("AlienBag");
+        }
 
         #endregion
 
@@ -166,6 +179,7 @@ namespace SI
                 commander = null;
                 if (lives == 0)
                 {
+                    BeforeEnd();
                     End?.Invoke(this, null);
                     return;
                 }
@@ -181,6 +195,8 @@ namespace SI
                 commander.Kill();
             }
         }
+
+
 
         private void updateScore(AlienDestroyedEventArgs e)
         {

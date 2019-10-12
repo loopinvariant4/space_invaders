@@ -29,9 +29,14 @@ namespace SI
 
         public event EventHandler End;
 
-        public void BeforeStart()
+        public void BeforeStart(GameStageSettings settings = null)
         {
             font = DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SpriteFont>("courier");
+        }
+
+        public void BeforeEnd()
+        {
+
         }
 
         public void Draw(GameTime gt, SpriteBatch spriteBatch)
@@ -49,9 +54,9 @@ namespace SI
         {
         }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gameTime, GameInput input)
         {
-            var keys = Keyboard.GetState().GetPressedKeys();
+            var keys = input.Keys;
             if(keys.Length > 0)
             {
                 End?.Invoke(this, null);

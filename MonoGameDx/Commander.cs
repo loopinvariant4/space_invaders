@@ -11,7 +11,6 @@ namespace SI
     {
         private Bullet bullet = null;
         private AnimatedSprite commanderSprite = null;
-        private readonly Dictionary<int, GameObject> gameObjects;
         private Queue<Tuple<int, GameObject>> addQueue;
         private Queue<Tuple<int, GameObject>> removeQueue;
         private State current = State.Alive;
@@ -52,7 +51,6 @@ namespace SI
 
             commanderSprite.Position = new Point(Env.Screen.Width / 2 + commanderSprite.Width / 2, Env.Screen.Height - 100);
             Id = id;
-            gameObjects = DIContainer.Get<Dictionary<int, GameObject>>("GameObjects");
             addQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("AddQueue");
             removeQueue = DIContainer.Get<Queue<Tuple<int, GameObject>>>("RemoveQueue");
             sounds.Add("shoot_sound", DIContainer.Get<AssetLoader>("AssetLoader").Content.Load<SoundEffect>("shoot_sound"));
@@ -106,40 +104,40 @@ namespace SI
             Sprite.Draw(batch);
         }
 
-        public override void OnInput(GameTime gt)
+        public override void OnInput(GameTime gt, GameInput input)
         {
             int moveSpeed = 3;
             if (isInputEnabled == false) return;
 
-            if (Keyboard.GetState().IsKeyDown(Keys.Up))
+            if (input.IsKeyDown(Keys.Up))
             {
                 if (isOutOfBounds(Bounds.Top) == false)
                 {
                     commanderSprite.Position.Y -= moveSpeed;
                 }
             }
-            if (Keyboard.GetState().IsKeyDown(Keys.Down))
+            if (input.IsKeyDown(Keys.Down))
             {
                 if (isOutOfBounds(Bounds.Bottom) == false)
                 {
                     commanderSprite.Position.Y += moveSpeed;
                 }
             }
-            if (Keyboard.GetState().IsKeyDown(Keys.Left))
+            if (input.IsKeyDown(Keys.Left))
             {
                 if (isOutOfBounds(Bounds.Left) == false)
                 {
                     commanderSprite.Position.X -= moveSpeed;
                 }
             }
-            if (Keyboard.GetState().IsKeyDown(Keys.Right))
+            if (input.IsKeyDown(Keys.Right))
             {
                 if (isOutOfBounds(Bounds.Right) == false)
                 {
                     commanderSprite.Position.X += moveSpeed;
                 }
             }
-            if (Keyboard.GetState().IsKeyDown(Keys.Space))
+            if (input.IsKeyDown(Keys.Space))
             {
                 Fire(gt);
             }

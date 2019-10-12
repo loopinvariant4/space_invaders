@@ -74,7 +74,7 @@ namespace SI
             bulletSprite.Draw(batch);
         }
 
-        public override void OnInput(GameTime gt)
+        public override void OnInput(GameTime gt, GameInput input)
         {
         }
 

@@ -24,7 +24,7 @@ namespace SI
 
         public abstract void Draw(SpriteBatch batch);
 
-        public abstract void OnInput(GameTime gt);
+        public abstract void OnInput(GameTime gt, GameInput input);
 
         public abstract void Destroy();
 

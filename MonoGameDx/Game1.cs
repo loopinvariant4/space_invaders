@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SI
 {
@@ -12,6 +13,7 @@ namespace SI
     /// </summary>
     public class Game1 : Game
     {
+        #region vars
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         private IGameStage currentStage;
@@ -24,16 +26,29 @@ namespace SI
         private int frameCounter = 0;
         private TimeSpan elapsedTime = TimeSpan.Zero;
         private readonly Song song;
+        private GameInput input = new GameInput();
+        private Replay replay;
+        Int64 loopId = 0;
+        bool doReplay = false;
+        string replayFilePath;
+        Queue<ReplayEvent> replayEvents;
+        ReplayEvent next;
+        Keys[] noKeys = new Keys[0];
+        #endregion
 
-        public Game1()
+        #region ctor
+        public Game1(string[] args)
         {
+            parseArgs(args);
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             graphics.IsFullScreen = false;
             graphics.PreferredBackBufferWidth = 1024;
             graphics.PreferredBackBufferHeight = 768;
         }
+        #endregion
 
+        #region protected methods
         /// <summary>
         /// Allows the game to perform any initialization it needs to before starting to run.
         /// This is where it can query for any required services and load any non-graphic
@@ -76,7 +91,22 @@ namespace SI
 
         protected override void BeginRun()
         {
-            startNewGame();
+            DIContainer.Clear();
+            DIContainer.Add<AssetLoader>("AssetLoader", loader);
+
+            if (doReplay == false)
+            {
+                startNewGame();
+            }
+            else
+            {
+                replayEvents = Replay.Load(replayFilePath);
+                currentStage = new Level("Level");
+                currentStage.End += (o, e) => Exit();
+                currentStage.BeforeStart();
+                currentStage.Start();
+
+            }
             base.BeginRun();
         }
 
@@ -94,7 +124,35 @@ namespace SI
                 Exit();
             }
 
-            currentStage.Update(gameTime);
+            if (doReplay == false)
+            {
+                loopId += 1;
+                input.Keys = Keyboard.GetState().GetPressedKeys();
+                recordReplay(loopId, input, currentStage.Id);
+                currentStage.Update(gameTime, input);
+            }
+            else
+            {
+                loopId += 1;
+                if (next == null)
+                {
+                    next = replayEvents.Dequeue();
+                }
+                if (loopId == next.LoopId)
+                {
+                    Console.WriteLine(next.ToString());
+                    input.Keys = next.Keys;
+                    if (replayEvents.Count > 0)
+                    {
+                        next = replayEvents.Dequeue();
+                    }
+                }
+                else
+                {
+                    input.Keys = noKeys;
+                }
+                currentStage.Update(gameTime, input);
+            }
 
             elapsedTime += gameTime.ElapsedGameTime;
             if (elapsedTime > System.TimeSpan.FromSeconds(1))
@@ -105,8 +163,9 @@ namespace SI
             }
 
             base.Update(gameTime);
-
         }
+
+
 
         /// <summary>
         /// This is called when the game should draw itself.
@@ -127,6 +186,7 @@ namespace SI
             spriteBatch.End();
             base.Draw(gameTime);
         }
+        #endregion
 
         #region private methods
         /// <summary>
@@ -136,25 +196,67 @@ namespace SI
         {
             var stage1 = new MainScreen("MainScreen");
             var stage2 = new Level("Level");
+            var stage2Settings = new GameStageSettings();
+            stage2Settings.Set("replay", true);
             var stage3 = new GameOver("GameOver");
 
             stage1.Next = stage2;
             stage2.Next = stage3;
             stage3.Next = stage1;
 
-            stage1.End += (o, e) => { currentStage = stage2; currentStage.BeforeStart(); currentStage.Start(); };
-            stage2.End += (o, e) => { currentStage = stage3; currentStage.BeforeStart(); currentStage.Start(); };
+            stage1.End += (o, e) =>
+            {
+                currentStage = stage2;
+                currentStage.BeforeStart();
+                currentStage.Start();
+                bool? shouldRecord = stage2Settings["replay"] as bool?;
+                if (shouldRecord.HasValue && shouldRecord == true)
+                {
+                    loopId = 0;
+                    replay = new Replay();
+                    replay.StartRecordingReplay();
+                }
+            };
+            stage2.End += (o, e) =>
+            {
+                bool? shouldRecord = stage2Settings["replay"] as bool?;
+                if (shouldRecord.HasValue && shouldRecord == true)
+                {
+                    replay.CompleteReplay();
+                }
+                currentStage = stage3;
+                currentStage.BeforeStart();
+                currentStage.Start();
+            };
             stage3.End += (o, e) => { startNewGame(); };
             return stage1;
         }
 
         private void startNewGame()
         {
-            DIContainer.Clear();
-            DIContainer.Add<AssetLoader>("AssetLoader", loader);
+            //TODO: Refactor this DIContainer part and see where it should sit rather than call it twice
+            //DIContainer.Clear();
+            //DIContainer.Add<AssetLoader>("AssetLoader", loader);
             currentStage = createGameStages();
             currentStage.BeforeStart();
             currentStage.Start();
+        }
+
+        private void recordReplay(Int64 loopId, GameInput input, string id)
+        {
+            if (id == "Level")
+            {
+                replay.recordCommands(loopId, input);
+            }
+        }
+        private void parseArgs(string[] args)
+        {
+            if (args != null && args.Length >= 2 && args[0] == "-replay")
+            {
+                string filename = args[1];
+                doReplay = true;
+                replayFilePath = Path.Combine(Directory.GetCurrentDirectory(), filename);
+            }
         }
         #endregion
     }
