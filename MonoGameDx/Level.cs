@@ -30,6 +30,7 @@ namespace SI
         private int currentLevel = 0;
         private bool isAlienVictorious = false;
         public event EventHandler End;
+        private bool isPaused = false;
         #endregion
 
 
@@ -103,6 +104,26 @@ namespace SI
 
         public void Update(GameTime gameTime, GameInput input)
         {
+            if (isPaused == true)
+            {
+                if (input.IsKeyPress(Keys.P))
+                {
+                    isPaused = !isPaused;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (input.IsKeyPress(Keys.P))
+                {
+                    isPaused = true;
+                    return;
+                }
+            }
+
             while (removeQueue.Count > 0)
             {
                 Tuple<int, GameObject> tup = removeQueue.Dequeue();
@@ -124,12 +145,13 @@ namespace SI
             {
                 obj.OnInput(gameTime, input);
                 obj.Update(gameTime);
-                if (input.IsKeyDown(Keys.K))
-                {
-                    isAlienVictorious = true;
-                    commander.Kill();
-                }
             }
+            if (input.IsKeyDown(Keys.K))
+            {
+                isAlienVictorious = true;
+                commander.Kill();
+            }
+
             collider.RemoveQueuedItems();
         }
 

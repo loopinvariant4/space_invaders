@@ -43,8 +43,8 @@ namespace SI
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             graphics.IsFullScreen = false;
-            graphics.PreferredBackBufferWidth = 1024;
-            graphics.PreferredBackBufferHeight = 768;
+            graphics.PreferredBackBufferWidth = 2024;
+            graphics.PreferredBackBufferHeight = 1168;
         }
         #endregion
 
@@ -100,12 +100,15 @@ namespace SI
             }
             else
             {
+                this.IsFixedTimeStep = true;
+                //this.graphics.SynchronizeWithVerticalRetrace = false;
+                //this.graphics.ApplyChanges();
+                this.TargetElapsedTime = TimeSpan.FromMilliseconds(8.333333);
                 replayEvents = Replay.Load(replayFilePath);
                 currentStage = new Level("Level");
                 currentStage.End += (o, e) => Exit();
                 currentStage.BeforeStart();
                 currentStage.Start();
-
             }
             base.BeginRun();
         }
@@ -127,6 +130,7 @@ namespace SI
             if (doReplay == false)
             {
                 loopId += 1;
+                Console.WriteLine("Q pressed: " + Keyboard.GetState().IsKeyUp(Keys.Q));
                 input.Keys = Keyboard.GetState().GetPressedKeys();
                 recordReplay(loopId, input, currentStage.Id);
                 currentStage.Update(gameTime, input);
@@ -173,8 +177,8 @@ namespace SI
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            //GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            //GraphicsDevice.Clear(Color.Black);
 
 
             // TODO: Add your drawing code here

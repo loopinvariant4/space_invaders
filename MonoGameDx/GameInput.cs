@@ -9,11 +9,31 @@ namespace SI
 {
     public class GameInput
     {
-        public Keys[] Keys { get; set; }
+        private Keys[] keys;
+
+        public Keys[] Keys
+        {
+            get
+            {
+                return keys;
+            }
+            set
+            {
+                PreviousKeys = keys;
+                keys = value;
+            }
+        }
+
+        public Keys[] PreviousKeys { get; private set; }
 
         public bool IsKeyDown(Keys key)
         {
             return Keys.Contains(key);
+        }
+
+        public bool IsKeyPress(Keys key)
+        {
+            return PreviousKeys != null && PreviousKeys.Contains(key) == true && IsKeyDown(key) == false;
         }
 
     }

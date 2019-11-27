@@ -101,6 +101,7 @@ namespace SI
 
         public void Draw(SpriteBatch batch)
         {
+            Color c = new Color(255,255,255, 1);
             if (isHidden) return;
 
             int row = currentFrame / cols;
@@ -109,7 +110,7 @@ namespace SI
             Rectangle src = new Rectangle(width * col, height * row, width, height);
             Rectangle dest = new Rectangle(Position.X, Position.Y, width, height);
 
-            batch.Draw(texture, dest, src, Color.White);
+            batch.Draw(texture, dest, src, c);
         }
 
         public void Show()
